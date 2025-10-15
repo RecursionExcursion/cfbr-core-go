@@ -40,7 +40,7 @@ type TeamLogo struct {
 
 /* Season */
 
-type ESPNSeason struct {
+type ESPNScoreboard struct {
 	Leagues []League      `json:"leagues"`
 	Events  []SeasonEvent `json:"events"`
 }

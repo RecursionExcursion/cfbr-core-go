@@ -39,6 +39,8 @@ var trackedStatCategories = []string{
 
 var TotalYardsStatKey = "totalYards"
 
+const espnFbsGroupId = 80
+
 /* ESPN Routes */
 const espnBase = "https://site.api.espn.com/apis/site/v2/sports/football/college-football"
 const espnGroups = "/groups"
@@ -74,3 +76,18 @@ var D2_3 = GroupName{
  *
  *
  */
+
+var fbsConferences = map[string]string{
+	"1":   "ACC",
+	"4":   "Big 12",
+	"5":   "Big Ten",
+	"8":   "SEC",
+	"9":   "Pac-12 (remnants)",
+	"12":  "Conference USA",
+	"15":  "MAC",
+	"17":  "Mountain West",
+	"18":  "Independents",
+	"37":  "Sun Belt",
+	"151": "AAC",
+	"80":  "FBS",
+}

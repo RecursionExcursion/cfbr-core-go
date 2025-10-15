@@ -14,12 +14,13 @@ type cfbrRoutes = struct {
 }
 
 type espnApi struct {
-	groups   func() string
-	season   func(year string) string
-	allTeams func() string
-	team     func(teamId int) string
-	stats    func(eventId int) string
-	day      func(date string) string
+	groups     func() string
+	season     func(year string) string
+	allTeams   func() string
+	team       func(teamId int) string
+	stats      func(eventId int) string
+	day        func(date string) string
+	scoreboard func(groupId int, startDate string, endDate string) string
 }
 
 func routeBuilder() cfbrRoutes {
@@ -40,6 +41,9 @@ func routeBuilder() cfbrRoutes {
 			stats: func(eventId int) string {
 				return fmt.Sprintf("%v%v?event=%v", espnBase, espnGame, eventId)
 			},
+			scoreboard: func(groupId int, startDate string, endDate string) string {
+				return fmt.Sprintf("%v%v?groups=%v&dates=%v-%v", espnBase, espnSeason, groupId, startDate, endDate)
+			},
 		},
 	}
 }
@@ -50,14 +54,19 @@ func fetchEspnAllTeams() (model.ESPNTeams, error) {
 	return fetchDataToT[model.ESPNTeams](r)
 }
 
+func fetchEspnScoreboard(groupId int, startDate string, endDate string) (model.ESPNScoreboard, error) {
+	r := routeBuilder().espn.scoreboard(groupId, startDate, endDate)
+	return fetchDataToT[model.ESPNScoreboard](r)
+}
+
 func fetchEspnTeam(teamId int) (model.ESPNTeamWrapper, error) {
 	r := routeBuilder().espn.team(teamId)
 	return fetchDataToT[model.ESPNTeamWrapper](r)
 }
 
-func fetchEspnSeason(date string) (model.ESPNSeason, error) {
+func fetchEspnSeason(date string) (model.ESPNScoreboard, error) {
 	r := routeBuilder().espn.season(date)
-	return fetchDataToT[model.ESPNSeason](r)
+	return fetchDataToT[model.ESPNScoreboard](r)
 }
 
 func fetchEspnStats(eventId int) (model.ESPNCfbGame, error) {
