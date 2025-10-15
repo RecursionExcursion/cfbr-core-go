@@ -2,6 +2,8 @@ package internal
 
 import "github.com/RecursionExcursion/go-toolkit/core"
 
+/*
+// TODO old api endpoints, OBSOLETE
 const baseRoute = "https://api.collegefootballdata.com"
 const teams = "/teams"       //?year=<year>"
 const games = "/games"       //?division=<division>&year=<year>&seasonType=<type>" //fbs?
@@ -19,7 +21,7 @@ const iii = "iii"
 
 var classes = []string{
 	fbs, fcs, ii, iii,
-}
+} */
 
 /* CFBR batching
  * cfbr only makes 18 req but gets ratelimited pretty quickly, 10 works but is not stable (yet?)
@@ -29,9 +31,11 @@ const batchSize = 5
 
 var BatchRunner = core.RunBatchSizeClosure(batchSize)
 
+/*
+//TODO Obsolete as ranking has been moved to client
 var trackedStatCategories = []string{
 	"totalYards",
-}
+} */
 
 var TotalYardsStatKey = "totalYards"
 

@@ -13,45 +13,33 @@ import (
 const espnSeasonDateFormat = "2006-01-02T15:04Z"
 const espnQueryDateFormat = "20060102"
 
-// /* Top Level DS for Season */
-// type Season struct {
-// 	Year      int
-// 	Schedules SeasonSchedules
-// 	Games     SeasonGames
-// 	Teams     SeasonTeams
-// }
-
-// type SeasonOccurences struct {
-// 	GamesPlayed int
-// 	Schedule    []CollectedGame
-// }
-
-// type CollectedGame struct {
-// 	GameId string
-// 	OppId  string
-// }
-
-// type SeasonSchedules map[string]*SeasonOccurences
-// type SeasonGames map[string]ESPNCfbGame
-// type SeasonTeams map[string]ESPNCfbTeam
-
-func CompileSeason(year int) (model.Season, error) {
+func CompileSeason(year int) (*model.Season, error) {
 	s, err := getZeroDay(year)
 	if err != nil {
-		//TODO
-		panic(err)
+		return nil, err
 	}
 
 	startDate, endDate, err := getSeasonDateRanges(s)
 	if err != nil {
-		//TODO
-		panic(err)
+		return nil, err
+	}
+
+	// Get today's date (midnight UTC)
+	now := time.Now()
+	nowMidnightUTC := time.Date(
+		now.Year(), now.Month(), now.Day(),
+		0, 0, 0, 0,
+		time.UTC,
+	)
+
+	//Compare it against the end of the season, do not scrape data after the current date
+	if nowMidnightUTC.Before(endDate) {
+		endDate = nowMidnightUTC
 	}
 
 	scd, err := collectSeasonDates(startDate, endDate)
 	if err != nil {
-		//TODO
-		panic(err)
+		return nil, err
 	}
 
 	scd.FilterFbsTeams()
@@ -59,13 +47,12 @@ func CompileSeason(year int) (model.Season, error) {
 	//collect games
 	gms, err := collectGames(scd)
 	if err != nil {
-		//TODO
-		panic(err)
+		return nil, err
 	}
 
 	tms, err := collectTeamInfo(scd)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	szn := model.Season{
@@ -75,7 +62,7 @@ func CompileSeason(year int) (model.Season, error) {
 		Teams:     tms,
 	}
 
-	return szn, nil
+	return &szn, nil
 }
 
 func getZeroDay(year int) (model.ESPNSeason, error) {
@@ -127,6 +114,7 @@ func collectSeasonDates(startDate time.Time, endDate time.Time) (model.SeasonSch
 		//call api
 		res, err := fetchEspnSeason(currDate.Format(espnQueryDateFormat))
 		if err != nil {
+			fmt.Println(err)
 			return tc, err
 		}
 		//proccess req into map
@@ -152,7 +140,7 @@ func collectSeasonDates(startDate time.Time, endDate time.Time) (model.SeasonSch
 	return tc, nil
 }
 
-// TODO need to batch that fetch calls for speed as order is irrelevant
+// TODO need to batch fetch calls for speed as order is irrelevant
 func collectGames(st model.SeasonSchedules) (model.SeasonGames, error) {
 
 	games := make(model.SeasonGames)

@@ -1,20 +1,18 @@
 package cfbrcore
 
 import (
-	"fmt"
-	"strconv"
-
 	"github.com/RecursionExcursion/cfbr-core-go/internal"
 	"github.com/RecursionExcursion/cfbr-core-go/model"
 )
 
-type SerializeableCompressedSeason struct {
-	Id               string `json:"id"`
-	CreatedAt        int    `json:"createdAt"`
-	Year             int    `json:"year"`
-	CompressedSeason string `json:"season"`
-}
+// type SerializeableCompressedSeason struct {
+// 	Id               string `json:"id"`
+// 	CreatedAt        int    `json:"createdAt"`
+// 	Year             int    `json:"year"`
+// 	CompressedSeason string `json:"season"`
+// }
 
+/* TODO obsolete as now this is just a data scrapper, consider deleting this (10/14/25)
 func MapToRanker(szn model.Season) (tms []RankerTeam, gms []RankerGame, err error) {
 
 	//Map szsn to ds's
@@ -107,8 +105,12 @@ func tmToStat(tm model.Team, gm model.ESPNCfbGame) (rs RankerStat, err error) {
 	}
 
 	return rs, err
-}
+} */
 
-func CompileSzn(year int) (model.Season, error) {
-	return internal.CompileSeason(year)
+func CollectSeasonData(year int) (model.Season, error) {
+	szn, err := internal.CompileSeason(year)
+	if err != nil {
+		return model.Season{}, err
+	}
+	return *szn, err
 }

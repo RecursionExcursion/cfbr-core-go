@@ -1,6 +1,8 @@
 package model
 
-/* Top Level DS for Season */
+import "fmt"
+
+/* Top Level data structure for Season */
 type Season struct {
 	Year      int
 	Schedules SeasonSchedules
@@ -42,11 +44,21 @@ func (tc SeasonSchedules) Add(c Competitor, opp Competitor, match SeasonCompetit
 }
 
 func (tc SeasonSchedules) FilterFbsTeams() {
+	/* Calculate max games played */
+	maxGamesPlayed := 0
+	for _, v := range tc {
+		if maxGamesPlayed < v.GamesPlayed {
+			maxGamesPlayed = v.GamesPlayed
+		}
+	}
+
+	//Filter out teams that have not played the maxGamedplayed -2
+	/* TODO this will break during postseason and the first couple weeks
+	consider scrapping the entire season??? Or the logic need to be rehashed,
+	will work for now, need to dig deeper into the ESPN API */
 	toDelete := []string{}
-
 	for k, v := range tc {
-		// most fbs teams play 12+ games, 10 gives it a nice buffer (134 teams in 2024)
-		if v.GamesPlayed < 10 {
+		if v.GamesPlayed < maxGamesPlayed-2 {
 			toDelete = append(toDelete, k)
 		}
 	}
@@ -55,31 +67,5 @@ func (tc SeasonSchedules) FilterFbsTeams() {
 		delete(tc, id)
 	}
 
-	/* At this point *most teams will be filtered but.....
-	* the geniuses over at ESPN include future fbs addtions
-	* so we need to cross ref the scheduled and ensure the majority of games
-	* are not paycheck games (fbs vs fcs)
-	 */
-
-	toDelete = []string{}
-	for k, v := range tc {
-		fbsGames := 0
-		for _, g := range v.Schedule {
-			_, exists := tc[g.OppId]
-			if exists {
-				fbsGames++
-			}
-		}
-		fbsRatio := float32(fbsGames) / float32(v.GamesPlayed)
-
-		// 50% games are played against fbs teams, this number is negotiable
-		if fbsRatio < .5 {
-			toDelete = append(toDelete, k)
-		}
-
-	}
-
-	for _, id := range toDelete {
-		delete(tc, id)
-	}
+	fmt.Println(len(tc))
 }

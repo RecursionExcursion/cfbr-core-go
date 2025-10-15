@@ -44,6 +44,7 @@ func routeBuilder() cfbrRoutes {
 	}
 }
 
+// TODO obsolete?
 func fetchEspnAllTeams() (model.ESPNTeams, error) {
 	r := routeBuilder().espn.allTeams()
 	return fetchDataToT[model.ESPNTeams](r)
