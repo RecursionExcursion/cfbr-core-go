@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
@@ -12,10 +14,9 @@ const espnSeasonDateFormat = "2006-01-02T15:04Z"
 const espnQueryDateFormat = "20060102"
 
 type Week struct {
-	Label     string    `json:"label"`
-	StartDate time.Time `json:"startDate"`
-	EndDate   time.Time `json:"endDate"`
-	eventIds  []string
+	Label     string              `json:"label"`
+	StartDate time.Time           `json:"startDate"`
+	EndDate   time.Time           `json:"endDate"`
 	Events    []model.SeasonEvent `json:"events"`
 }
 
@@ -36,6 +37,26 @@ func CompileSeason(year int) (*model.Season, error) {
 
 	fmt.Println(len(teamMap))
 	fmt.Println(fq)
+
+	ids := []string{}
+	for _, e := range wks[0].Events {
+		ids = append(ids, e.Id)
+	}
+
+	gms, err := CollectGameData(ids)
+	if err != nil {
+		panic(err)
+	}
+
+	jsn, err := json.Marshal(gms)
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.WriteFile("gms.json", jsn, 0644)
+	if err != nil {
+		panic(err)
+	}
 
 	// iterate the weeks and pull each set of data
 
@@ -69,7 +90,6 @@ func GetSeasonWeeks(year int) ([]Week, error) {
 				Label:     fmt.Sprintf("%v %v", szn.Label, wk.Label),
 				StartDate: sd,
 				EndDate:   ed,
-				eventIds:  []string{},
 				Events:    []model.SeasonEvent{},
 			})
 		}
@@ -129,4 +149,18 @@ func collectTeams(wks []Week) (map[string]model.ESPNCfbTeam, []string, error) {
 		}
 	}
 	return teamMap, failedQueries, nil
+}
+
+func CollectGameData(gIds []string) ([]model.ESPNCfbGame, error) {
+	gms := []model.ESPNCfbGame{}
+
+	for i, id := range gIds {
+		fmt.Printf("Collecting game %v/%v\n", i+1, len(gIds))
+		gm, err := fetchEspnStats(id)
+		if err != nil {
+			return nil, err
+		}
+		gms = append(gms, gm)
+	}
+	return gms, nil
 }
