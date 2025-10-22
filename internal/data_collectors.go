@@ -24,20 +24,20 @@ type SeasonData struct {
 	Teams []model.ESPNCfbTeam `json:"teams"`
 }
 
-// TODO Handle panics
+// TODO Impl loggin api
 func GetSeasonData(year int) (SeasonData, error) {
 	wks, err := getSeasonWeeks(year)
 	if err != nil {
-		panic(err)
+		return SeasonData{}, err
 	}
 
 	wks, err = populateWeekEvents(wks)
 	if err != nil {
-		panic(err)
+		return SeasonData{}, err
 	}
 	tms, _, err := collectTeams(wks)
 	if err != nil {
-		panic(err)
+		return SeasonData{}, err
 	}
 
 	return SeasonData{
@@ -60,11 +60,11 @@ func getSeasonWeeks(year int) ([]Week, error) {
 		for _, wk := range szn.Entries {
 			sd, err := time.Parse(espnSeasonDateFormat, wk.StartDate)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 			ed, err := time.Parse(espnSeasonDateFormat, wk.EndDate)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 
 			weeks = append(weeks, Week{
@@ -99,7 +99,7 @@ func populateWeekEvents(wks []Week) ([]Week, error) {
 		fmt.Printf("Fetching %v %v/%v\n", wk.Label, i+1, len(wks))
 		sb, err := fetchEspnScoreboard(80, wk.StartDate.Format(espnQueryDateFormat), wk.EndDate.Format(espnQueryDateFormat))
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		wk.Events = append(wk.Events, sb.Events...)
 		retWks = append(retWks, wk)

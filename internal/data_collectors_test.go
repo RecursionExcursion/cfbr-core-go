@@ -1,12 +1,24 @@
 package internal
 
+import (
+	"testing"
+)
+
 //TODO WRITE TESTSSSSSS
 
-// func TestDataCollectors(t *testing.T) {
-// 	szn, err := CompileSeason(2025)
-// 	if err != nil {
-// 		panic(err)
-// 	}
+const year = 2025
+const expectedTeamCount = 136
 
-// 	log.Println(szn)
-// }
+func TestGetSeasonData(t *testing.T) {
+	szn, err := GetSeasonData(year)
+	if err != nil {
+		t.Error(err)
+	}
+
+	numTeamns := len(szn.Teams)
+
+	if numTeamns != expectedTeamCount {
+		t.Errorf("Collected %v teams. Expected %v", numTeamns, expectedTeamCount)
+	}
+
+}
