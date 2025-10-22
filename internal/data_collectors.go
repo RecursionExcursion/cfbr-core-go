@@ -1,9 +1,7 @@
 package internal
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -20,52 +18,36 @@ type Week struct {
 	Events    []model.SeasonEvent `json:"events"`
 }
 
-func CompileSeason(year int) (*model.Season, error) {
-	wks, err := GetSeasonWeeks(year)
-	if err != nil {
-		panic(err)
-	}
-
-	wks, err = PopulateWeekEvents(wks)
-	if err != nil {
-		panic(err)
-	}
-	teamMap, fq, err := collectTeams(wks)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(len(teamMap))
-	fmt.Println(fq)
-
-	ids := []string{}
-	for _, e := range wks[0].Events {
-		ids = append(ids, e.Id)
-	}
-
-	gms, err := CollectGameData(ids)
-	if err != nil {
-		panic(err)
-	}
-
-	jsn, err := json.Marshal(gms)
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.WriteFile("gms.json", jsn, 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	// iterate the weeks and pull each set of data
-
-	panic("END OF SCRIPT")
-
-	return &model.Season{}, nil
+type SeasonData struct {
+	Year  int                 `json:"year"`
+	Weeks []Week              `json:"weeks"`
+	Teams []model.ESPNCfbTeam `json:"teams"`
 }
 
-func GetSeasonWeeks(year int) ([]Week, error) {
+// TODO Handle panics
+func GetSeasonData(year int) (SeasonData, error) {
+	wks, err := getSeasonWeeks(year)
+	if err != nil {
+		panic(err)
+	}
+
+	wks, err = populateWeekEvents(wks)
+	if err != nil {
+		panic(err)
+	}
+	tms, _, err := collectTeams(wks)
+	if err != nil {
+		panic(err)
+	}
+
+	return SeasonData{
+		Year:  year,
+		Weeks: wks,
+		Teams: tms,
+	}, nil
+}
+
+func getSeasonWeeks(year int) ([]Week, error) {
 	//Query zero week 08/01/YYYY, should have no games
 	s, err := fetchEspnSeason(fmt.Sprintf("%v0801", year))
 	if err != nil {
@@ -73,7 +55,6 @@ func GetSeasonWeeks(year int) ([]Week, error) {
 	}
 
 	weeks := []Week{}
-	// layout := "2006-01-02T15:04Z" // matches YYYY-MM-DDTHH:MMZ
 
 	for _, szn := range s.Leagues[0].Calender {
 		for _, wk := range szn.Entries {
@@ -97,7 +78,21 @@ func GetSeasonWeeks(year int) ([]Week, error) {
 	return weeks, nil
 }
 
-func PopulateWeekEvents(wks []Week) ([]Week, error) {
+func CollectGameData(gIds []string) ([]model.ESPNCfbGame, error) {
+	gms := []model.ESPNCfbGame{}
+
+	for i, id := range gIds {
+		fmt.Printf("Collecting game %v/%v\n", i+1, len(gIds))
+		gm, err := fetchEspnStats(id)
+		if err != nil {
+			return nil, err
+		}
+		gms = append(gms, gm)
+	}
+	return gms, nil
+}
+
+func populateWeekEvents(wks []Week) ([]Week, error) {
 	retWks := []Week{}
 
 	for i, wk := range wks {
@@ -112,7 +107,7 @@ func PopulateWeekEvents(wks []Week) ([]Week, error) {
 	return retWks, nil
 }
 
-func collectTeams(wks []Week) (map[string]model.ESPNCfbTeam, []string, error) {
+func collectTeams(wks []Week) ([]model.ESPNCfbTeam, []string, error) {
 	queriedMap := map[string]struct{}{}
 	teamMap := map[string]model.ESPNCfbTeam{}
 	failedQueries := []string{}
@@ -148,19 +143,12 @@ func collectTeams(wks []Week) (map[string]model.ESPNCfbTeam, []string, error) {
 			}
 		}
 	}
-	return teamMap, failedQueries, nil
-}
 
-func CollectGameData(gIds []string) ([]model.ESPNCfbGame, error) {
-	gms := []model.ESPNCfbGame{}
+	tms := []model.ESPNCfbTeam{}
 
-	for i, id := range gIds {
-		fmt.Printf("Collecting game %v/%v\n", i+1, len(gIds))
-		gm, err := fetchEspnStats(id)
-		if err != nil {
-			return nil, err
-		}
-		gms = append(gms, gm)
+	for _, tm := range teamMap {
+		tms = append(tms, tm)
 	}
-	return gms, nil
+
+	return tms, failedQueries, nil
 }
